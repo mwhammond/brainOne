@@ -78,7 +78,7 @@ out1Spikes = SpikeMonitor(output1Group, rec)
 
 
 
-@network_operation(dt=20*ms)
+@network_operation(dt=500*ms)
 def update_active():
     #print defaultclock.t
     global INPUT
