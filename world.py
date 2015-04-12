@@ -12,7 +12,7 @@ MY_LOCK = threading.Lock()
 
 SCORE = 0
 BOARD = np.zeros((3,3))
-MOVE = braincore.MOVE
+#MOVE = braincore.MOVE
 
 
     
@@ -52,7 +52,7 @@ class runGame(threading.Thread):
             # PLAY MOVE
             print "play move"
             #if MOVE is not None: 
-            print "Printing MOVE from game thread: {}".format(MOVE) 
+            print "Printing MOVE from game thread: {}".format(braincore.MOVE) 
             # SEND BOARD
             BOARD = np.random.rand(3,3)
             time.sleep(0.2)
