@@ -3,7 +3,8 @@ import time
 
 print "creating network"
 
-MOVE = 0
+OUTPUT = np.zeros((4,1))
+INPUT = np.zeros((3,3))
 
 theta = 5*mV
 Vr = 10*mV
@@ -79,17 +80,28 @@ out1Spikes = SpikeMonitor(output1Group, rec)
 
 @network_operation(dt=20*ms)
 def update_active():
-    global MOVE
     #print defaultclock.t
-    G.I_[0] = 10*nA
-    G.I_[1] = 5*nA
-    G.I_[2] = 5*nA
-    #print "now"
-    #printHello()
-    MOVE = randint(0,4)
-    print "Printing MOVE from braincore: {}".format(MOVE)
-    print "Spike count on onput 1: {}".format(out1Spikes.num_spikes)
+    global INPUT
+    global OUTPUT
+    
+    # SET INPUT ACCORDING TO BOARD PIXEL VALUE
+    print "Printing INPUT from braincore: {}".format(INPUT)
+    print "Printing INPUT from braincore: {}".format(INPUT[0,0])
+    G.I_[0] = 10*INPUT[0,0]*nA
+    G.I_[1] = 10*INPUT[1,0]*nA
+    G.I_[2] = 10*INPUT[2,0]*nA
 
+    # GET OUTPUT AND SEND TO WORLD TO DECIDE ON MOVE
+    OUTPUT[0,0] = out1Spikes.num_spikes # DO FOR ELECTRODE IN GIVEN TIME PERIOD
+    OUTPUT[1,0] = out1Spikes.num_spikes
+    OUTPUT[2,0] = out1Spikes.num_spikes
+    OUTPUT[3,0] = out1Spikes.num_spikes
+    
+    print "Printing MOVE from braincore: {}".format(OUTPUT)
+    #print "Spike count on onput 1: {}".format(out1Spikes.num_spikes)
+    
+    
+    
     
 def runit():
     run(duration)

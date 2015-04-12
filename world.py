@@ -4,6 +4,7 @@ from random import randint
 import time
 from brian2 import *
 import braincore
+import fakeSnake
 
 duration = '60*seconds'
 
@@ -11,50 +12,36 @@ MY_LOCK = threading.Lock()
 
 
 SCORE = 0
-BOARD = np.zeros((3,3))
+
 #MOVE = braincore.MOVE
 
 
-    
-
-
-def printHello():
-    print "lone print statement"
-
-    
+     
     
 
 class runBrain(threading.Thread):
     def run(self):
+        # ANYTHING HERE WILL ONLY BE RUN ONCE
         braincore.runit()
-        ####### NOTHING BELOW HERE WILL RUN!! #######
-        
-        #for i in range(1000):
-        #inputNeuron = [0,0,0]
-        #outputNeuron = [0]
-        #MY_LOCK.acquire()
-        # SET INPUT FROM BOARD
-        #inputNeuron[0] = BOARD[0,0]
-        #print "value of board"
-        #print inputNeuron[0]
-        # GET OUTPUT
-        #outputNeuron[0] = randint(0,4)
-        #MOVE = outputNeuron[0] 
-        #MY_LOCK.release()
-            
-              
+        ####### NOTHING BELOW HERE WILL RUN!! #######             
         
 class runGame(threading.Thread):
     def run(self):
-        global MOVE
+        #global MOVE
         for i in range(10000):
+            
+            braincore.INPUT = np.random.rand(10,1) #pull from snake later in snake.BOARD
+            ####### SCALE THE BOARD #######
+            #get the board from fakesnake
+            #set the variable in brain
+            
             #MY_LOCK.acquire()
             # PLAY MOVE
             print "play move"
             #if MOVE is not None: 
-            print "Printing MOVE from game thread: {}".format(braincore.MOVE) 
+            print "Printing MOVE from game thread: {}".format(braincore.OUTPUT) # set in snake namespace
+            
             # SEND BOARD
-            BOARD = np.random.rand(3,3)
             time.sleep(0.2)
             #MY_LOCK.release()
         
