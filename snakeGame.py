@@ -2,7 +2,7 @@ import random
 from Tkinter import *
 import numpy as np
 
-MOVE = 0
+MOVE = "None"
 BOARD = np.zeros((6,6))
 
 
@@ -196,24 +196,13 @@ def init(canvas):
 def machineMove(root,canvas):
     global MOVE
     global BOARD
-    print "machine move triggered"
-    print np.array(canvas.data["snakeBoard"])
+    #print np.array(canvas.data["snakeBoard"])
     BOARD = np.array(canvas.data["snakeBoard"])
-    #N, output = brainOne.move(N,np.array(canvas.data["snakeBoard"]))
-    #if (output[0] == True):
-    #    root.event_generate("<Up>", when="tail")
-    #    print "0: Up"
-    #if (output[1] == True):
-    #    root.event_generate("<Down>", when="tail")
-    #    print "1 Down"
-    #if (output[2] == True):
-    #    root.event_generate("<Left>", when="tail")
-    #    print "2 Left"
-    #if (output[3] == True):
-    #    root.event_generate("<Right>", when="tail")
-    #    print "3 Right"
+    print MOVE
+    if MOVE:
+        root.event_generate(MOVE, when="tail")
     
-    root.after(500,machineMove,root,canvas)
+    root.after(200,machineMove,root,canvas)
     
 
 
@@ -244,7 +233,7 @@ def run(rows, cols):
     root.bind("<Button-1>", mousePressed)
     root.bind("<Key>", keyPressed)
     timerFired(canvas)
-    root.after(500,machineMove,root,canvas) 
+    root.after(200,machineMove,root,canvas) 
     
     # and launch the app
     root.mainloop()  

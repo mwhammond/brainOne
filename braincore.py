@@ -4,14 +4,17 @@ import time
 print "creating network"
 
 OUTPUT = np.zeros((4,1))
-INPUT = np.zeros((3,3))
+INPUT = np.zeros((36,1))
+
+
+
 
 theta = 5*mV
 Vr = 10*mV
 tau = 20*ms
 muext = 25*mV
 sigmaext = 1*mV
-we = 1*mV
+we = 2*mV
 
 
 C = 281 * pF
@@ -21,7 +24,7 @@ EL = -70.6 * mV
 VT = -50.4 * mV
 DeltaT = 2 * mV
 Vcut = VT + 5 * DeltaT
-duration = 6000*ms
+duration = 50000*ms
 
 # Pick an electrophysiological behaviour
 #tauw, a, b, Vr = 144*ms, 4*nS, 0.0805*nA, -70.6*mV # Regular spiking (as in the paper)
@@ -38,11 +41,20 @@ I : amp
 #  I = sin(2*pi*rate*t) : 1
 
 ##### GROUP CREATION #####
-G = NeuronGroup(10, model=eqs, threshold='v>Vcut',
+G = NeuronGroup(36, model=eqs, threshold='v>Vcut',
                      reset="v=Vr; w+=b")
 
+# Multiple groups because spike tracking can't be cleared so use single count variable
+output1Group = NeuronGroup(1, model=eqs, threshold='v>Vcut',
+                     reset="v=Vr; w+=b")
 
-output1Group = NeuronGroup(4, model=eqs, threshold='v>Vcut',
+output2Group = NeuronGroup(1, model=eqs, threshold='v>Vcut',
+                     reset="v=Vr; w+=b")
+
+output3Group = NeuronGroup(1, model=eqs, threshold='v>Vcut',
+                     reset="v=Vr; w+=b")
+
+output4Group = NeuronGroup(1, model=eqs, threshold='v>Vcut',
                      reset="v=Vr; w+=b")
 
 
@@ -52,8 +64,17 @@ output1Group = NeuronGroup(4, model=eqs, threshold='v>Vcut',
 
 ##### CREATE CONNECTIONS ######
 
-S1 = Synapses(G, output1Group, pre='v_post += we')
+S1 = Synapses(G, output1Group, pre='v_post += we*rand()')
 S1.connect('i!=j')
+
+S2 = Synapses(G, output2Group, pre='v_post += we*rand()')
+S2.connect('i!=j')
+
+S3 = Synapses(G, output3Group, pre='v_post += we*rand()')
+S3.connect('i!=j')
+
+S4 = Synapses(G, output4Group, pre='v_post += we*rand()')
+S4.connect('i!=j')
 
 ##### CREATE CONNECTIONS ######
 
@@ -67,7 +88,10 @@ S1.connect('i!=j')
 
 
 #inputSpikes = SpikeMonitor(G, rec) 
-out1Spikes = SpikeMonitor(output1Group, rec)
+out1Spikes = SpikeMonitor(output1Group, record=False)
+out2Spikes = SpikeMonitor(output2Group, record=False)
+out3Spikes = SpikeMonitor(output3Group, record=False)
+out4Spikes = SpikeMonitor(output4Group, record=False)
 
 #out1Rate = PopulationRateMonitor(output1Group)
 
@@ -83,23 +107,40 @@ def update_active():
     #print defaultclock.t
     global INPUT
     global OUTPUT
+
     
     # SET INPUT ACCORDING TO BOARD PIXEL VALUE
-    print "Printing INPUT from braincore: {}".format(INPUT)
-    print "Printing INPUT from braincore: {}".format(INPUT[0,0])
-    G.I_[0] = 10*INPUT[0,0]*nA
-    G.I_[1] = 10*INPUT[1,0]*nA
-    G.I_[2] = 10*INPUT[2,0]*nA
+    #print "Printing INPUT from braincore: {}".format(INPUT)
+    #print "Printing INPUT from braincore: {}".format(INPUT[0,0])
+    for i in range (0,35):
+        G.I_[i] = 10*INPUT[i,0]*nA
+ 
 
     # GET OUTPUT AND SEND TO WORLD TO DECIDE ON MOVE
-    OUTPUT[0,0] = out1Spikes.num_spikes # DO FOR ELECTRODE IN GIVEN TIME PERIOD
-    OUTPUT[1,0] = out1Spikes.num_spikes
-    OUTPUT[2,0] = out1Spikes.num_spikes
-    OUTPUT[3,0] = out1Spikes.num_spikes
+    #print out1Spikes.i
     
-    print "Printing MOVE from braincore: {}".format(OUTPUT)
+    OUTPUT[0,0] = out1Spikes.count
+    OUTPUT[1,0] = out2Spikes.count
+    OUTPUT[2,0] = out3Spikes.count
+    OUTPUT[3,0] = out4Spikes.count
+
+    
+    #OUTPUT[1,0] = len(np.equal(out1Spikes.i, 1))
+    #OUTPUT[2,0] = len(np.equal(out1Spikes.i, 2))
+    #OUTPUT[3,0] = len(np.equal(out1Spikes.i, 3))
+    
+    #out1Spikes.reinit() # clears recorded spikes
+    
+    #print "Printing MOVE from braincore: {}".format(OUTPUT)
     #print "Spike count on onput 1: {}".format(out1Spikes.num_spikes)
+    #print INPUT
+    #print OUTPUT
     
+    # PROBLEMS
+    # NOT ACTUALLY DOING MOVE
+    # OUTPUT SEEM TO JUST BE COUNT OF SPIKE, IDENTICAL ON ALL - because it needs indexing see e.g.
+    # SEEMS TO STOP AFTER A FEW MINUTES
+    # 2s BEING FLATTENED TO 1S
     
     
     
