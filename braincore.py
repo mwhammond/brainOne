@@ -7,8 +7,6 @@ OUTPUT = np.zeros((4,1))
 INPUT = np.zeros((36,1))
 
 
-
-
 theta = 5*mV
 Vr = 10*mV
 tau = 20*ms
@@ -29,7 +27,7 @@ duration = 50000*ms
 # Pick an electrophysiological behaviour
 #tauw, a, b, Vr = 144*ms, 4*nS, 0.0805*nA, -70.6*mV # Regular spiking (as in the paper)
 #tauw,a,b,Vr=20*ms,4*nS,0.5*nA,VT+5*mV # Bursting
-tauw,a,b,Vr=144*ms,2*C/(144*ms),0*nA,-70.6*mV # Fast spiking
+#tauw,a,b,Vr=144*ms,2*C/(144*ms),0*nA,-70.6*mV # Fast spiking
 
 eqs = """
 dv/dt = (gL*(EL - v) + gL*DeltaT*exp((v - VT)/DeltaT) + I - w)/C : volt
@@ -64,17 +62,21 @@ output4Group = NeuronGroup(1, model=eqs, threshold='v>Vcut',
 
 ##### CREATE CONNECTIONS ######
 
-S1 = Synapses(G, output1Group, pre='v_post += we*rand()')
+S1 = Synapses(G, output1Group, model='w:volt', pre='v_post += we')
 S1.connect('i!=j')
+S1.w = 'rand()*mV'
 
-S2 = Synapses(G, output2Group, pre='v_post += we*rand()')
+S2 = Synapses(G, output2Group, model='w:volt', pre='v_post += we')
 S2.connect('i!=j')
+S2.w = 'rand()*mV'
 
-S3 = Synapses(G, output3Group, pre='v_post += we*rand()')
+S3 = Synapses(G, output3Group, model='w:volt', pre='v_post += we')
 S3.connect('i!=j')
+S3.w = 'rand()*mV'
 
-S4 = Synapses(G, output4Group, pre='v_post += we*rand()')
+S4 = Synapses(G, output4Group, model='w:volt', pre='v_post += we')
 S4.connect('i!=j')
+S4.w = 'rand()*mV'
 
 ##### CREATE CONNECTIONS ######
 
