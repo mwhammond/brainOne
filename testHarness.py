@@ -38,7 +38,7 @@ taue = 5*ms
 # synapse variables
 
 gmax = .01 * siemens
-dApre = .01
+dApre = .01 * siemens
 taupre = 20*ms
 taupost = taupre
 dApost = -dApre * taupre / taupost * 1.05
@@ -59,9 +59,24 @@ tauw, a, b, Vr = 144*ms, 4*nS, 0.0805*nA, -70.6*mV # Regular spiking (as in the 
 eqs = """
 dvm/dt = (gL*(EL - vm) + gL*DeltaT*exp((vm - VT)/DeltaT) + I - wa)/C : volt
 dwa/dt = (a*(vm - EL) - wa)/tauw : amp
-dge/dt = -ge / taue : 1
+dge/dt = -ge / taue : siemens
 I : amp
 """
+
+eqs_LIF = '''
+dv/dt = (-g_l*(v-E_l) + I_syn_e) / C : volt
+dg_e/dt = -g_e/tau_syn_e : siemens
+I_syn_e = g_e*(E_syn_e - v) : amp
+C : farad
+g_l : siemens
+E_l : volt
+I_inject : amp
+v_t : volt
+v_r : volt
+tau_syn_e : second
+E_syn_e : volt
+'''
+
 #
 
 #eqs = '''
@@ -89,11 +104,13 @@ layer2 = NeuronGroup(12, model=eqs, threshold='vm>Vcut', reset="vm=Vr; wa+=b")
 
 ### SYNAPSE FROM INPUT #######
 
+#DimensionMismatchError: An error occured preparing object "synapses_post":
+#Addition, dimensions were (m^-2 kg^-1 s^3 A^2) (m^-4 kg^-2 s^6 A^4)
 
 S = Synapses(layer1, layer2,
-             '''w : 1
-                dApre/dt = -Apre / taupre : 1 (event-driven)
-                dApost/dt = -Apost / taupost : 1 (event-driven)''',
+             '''w : siemens
+                dApre/dt = -Apre / taupre : siemens (event-driven)
+                dApost/dt = -Apost / taupost : siemens (event-driven)''',
              pre='''ge += w
                     Apre += dApre
                     w = clip(w + Apost, 0, gmax)''',
