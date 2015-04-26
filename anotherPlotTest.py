@@ -24,13 +24,6 @@ class plotStuff(threading.Thread):
        # simulates input from serial port
     
 
-        
-        def random_gen():
-            while True:
-                val = np.random.randint(1,10)
-                yield val
-                time.sleep(0.1)
-
         #a1 = deque([0]*100)
         #ax = plt.axes(xlim=(0, 20), ylim=(0, 10))
         #d = random_gen()

@@ -23,10 +23,13 @@ dv/dt = (ge * (Ee-vr) + El - v) / taum : volt
 dge/dt = -ge / taue : 1
 '''
 
-input = NeuronGroup(36, eqs_neurons, threshold='v>vt', reset='v = vr')
+eqs = """
+dv/dt = (gL*(EL - v) + gL*DeltaT*exp((v - VT)/DeltaT) + I - w)/C : volt
+dw/dt = (a*(v - EL) - w)/tauw : amp
+I : amp
+"""
 
-input.I_[0] = 2*nA
-
+input = PoissonGroup(N, rates=F)
 neurons = NeuronGroup(1, eqs_neurons, threshold='v>vt', reset='v = vr')
 S = Synapses(input, neurons,
              '''w : 1

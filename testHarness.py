@@ -37,8 +37,8 @@ taue = 5*ms
 
 # synapse variables
 
-gmax = .01 * siemens
-dApre = .01 * siemens
+gmax = .01
+dApre = .01
 taupre = 20*ms
 taupost = taupre
 dApost = -dApre * taupre / taupost * 1.05
@@ -63,6 +63,12 @@ dge/dt = -ge / taue : siemens
 I : amp
 """
 
+eqs_neurons = '''
+dvm/dt = (ge * (Ee-vr) + El - vm + I) / taum : volt
+dge/dt = -ge / taue : 1
+I : amp
+'''
+
 eqs_LIF = '''
 dv/dt = (-g_l*(v-E_l) + I_syn_e) / C : volt
 dg_e/dt = -g_e/tau_syn_e : siemens
@@ -86,12 +92,12 @@ E_syn_e : volt
 
 
 ##### GROUP CREATION #####
-layer1 = NeuronGroup(36, model=eqs, threshold='vm>Vcut', reset="vm=Vr; wa+=b")
+layer1 = NeuronGroup(36, model=eqs_neurons, threshold='vm>Vcut', reset="vm=Vr")
 
 #layer1 = NeuronGroup(36, eqs, threshold='vm>vt', reset='vm = vr')
 #layer2 = NeuronGroup(12, eqs, threshold='vm>vt', reset='vm = vr')
 
-layer2 = NeuronGroup(12, model=eqs, threshold='vm>Vcut', reset="vm=Vr; wa+=b")
+layer2 = NeuronGroup(12, model=eqs_neurons, threshold='vm>Vcut', reset="vm=Vr")
 
 #layer3 = NeuronGroup(12, model=eqs, threshold='vm>Vcut',
 #                     reset="vm=Vr; w+=b")
@@ -104,13 +110,11 @@ layer2 = NeuronGroup(12, model=eqs, threshold='vm>Vcut', reset="vm=Vr; wa+=b")
 
 ### SYNAPSE FROM INPUT #######
 
-#DimensionMismatchError: An error occured preparing object "synapses_post":
-#Addition, dimensions were (m^-2 kg^-1 s^3 A^2) (m^-4 kg^-2 s^6 A^4)
 
 S = Synapses(layer1, layer2,
-             '''w : siemens
-                dApre/dt = -Apre / taupre : siemens (event-driven)
-                dApost/dt = -Apost / taupost : siemens (event-driven)''',
+             '''w : 1
+                dApre/dt = -Apre / taupre : 1 (event-driven)
+                dApost/dt = -Apost / taupost : 1 (event-driven)''',
              pre='''ge += w
                     Apre += dApre
                     w = clip(w + Apost, 0, gmax)''',
@@ -120,6 +124,8 @@ S = Synapses(layer1, layer2,
              )
                      
 S.w = 'rand() * gmax'
+
+
 
 # without STDP
 
@@ -137,7 +143,7 @@ S.w = 'rand() * gmax'
 
 @network_operation(dt=100*ms)
 def update_active():
-    layer1.I = CURRENT*nA # SET TO SPECIFIC CELLS
+    layer1.I = CURRENT*pA # SET TO SPECIFIC CELLS
 
     
     
@@ -166,18 +172,42 @@ run(duration, report='text')
 print "running"
 
 #subplot(221)
-#plot(statemonHidden.t/ms, statemonHidden.vm[0])
+#plot(statemonHidden.t/ms, statemonHidden.vm[1])
 
-    
-v = statemonHidden[0].vm[:]
-for t in spikesHidden.t:
-    i = int(t / defaultclock.dt)
-    v[i] = 20*mV
-plot(statemonHidden.t / ms, v / mV)
-show()
+figure()    
+#v = statemonHidden[0].vm[:]
+#for t in spikesHidden.t:
+#    i = int(t / defaultclock.dt)
+#    v[i] = 20*mV
+#plot(statemonHidden.t / ms, v / mV)
+plot(statemonHidden.t/ms, statemonHidden.vm[1])
+
 
 #subplot(222)
 
-    
+
+def visualise_connectivity(S):
+    Ns = len(S.source)
+    Nt = len(S.target)
+    figure(figsize=(10, 4))
+    subplot(121)
+    plot(zeros(Ns), arange(Ns), 'ok', ms=10)
+    plot(ones(Nt), arange(Nt), 'ok', ms=10)
+    for i, j in zip(S.i, S.j):
+        plot([0, 1], [i, j], '-k')
+    xticks([0, 1], ['Source', 'Target'])
+    ylabel('Neuron index')
+    xlim(-0.1, 1.1)
+    ylim(-1, max(Ns, Nt))
+    subplot(122)
+    plot(S.i, S.j, 'ok')
+    xlim(-1, Ns)
+    ylim(-1, Nt)
+    xlabel('Source neuron index')
+    ylabel('Target neuron index')
+
+#visualise_connectivity(S)
+show()    
+
 
 
