@@ -1,4 +1,5 @@
 from brian2 import *
+import math
 
 # Parameters
 C = 281 * pF # Membrane capacitance
@@ -10,8 +11,13 @@ VT = -50.4 * mV # Spiking threshold
 DeltaT = 2 * mV
 Vcut = VT + 5 * DeltaT
 bgcurrent = 0*pA #200*pA   # External current
-NE = 4          # Number of excitatory cells
-NI = NE/4          # Number of inhibitory cells
+propInhib = 0.2 # proportion of inhbitory cells
+NE = 8          # Number of excitatory cells
+NI = int(math.ceil(NE*propInhib))         # Number of inhibitory cells
+print NE
+print "excitatory neurons"
+print NI
+print "inhibitory neurons"
 tau_ampa = 5.0*ms   # Glutamatergic synaptic time constant
 tau_gaba = 10.0*ms  # GABAergic synaptic time constant
 epsilon = 0.02      # Sparseness of synaptic connections
@@ -71,8 +77,8 @@ P = NeuronGroup(NE+NI, model=eqs, threshold='v>Vcut',reset="v=Vr; w1+=b", refrac
 ##### SYNAPSES #####
 ####################
 
-Pe = P[:NE] # everything up to
-Pi = P[NE:]
+Pe = P[:NE] # set all to excitatory
+Pi = P[NE-NI:] # everything after is inhibitory
 
 
 Ce = Synapses(Pe, P,
@@ -84,7 +90,7 @@ Ce = Synapses(Pe, P,
                     w = clip(w + Apost, 0, gmax)''',
              post='''Apost += dApost
                      w = clip(w + Apre, 0, gmax)''',
-              connect='rand()<0.8')
+              connect=True)
 
 
 Ci = Synapses(Pi, P,
@@ -96,7 +102,7 @@ Ci = Synapses(Pi, P,
                     w = clip(w + Apost, 0, gmax)''',
              post='''Apost += dApost
                      w = clip(w + Apre, 0, gmax)''',
-              connect='rand()<0.2')
+              connect=True)
 
 
 
@@ -124,7 +130,7 @@ def update_active():
     # SET INPUT ACCORDING TO BOARD PIXEL VALUE
     #print "Printing INPUT from braincore: {}".format(INPUT)
     #print "Printing INPUT from braincore: {}".format(INPUT[0,0])
-    for i in range (0,35):
+    for i in range (0,4):
         P.I_[i] = 200*pA
         #P.bgcurrent_[i] = 10*INPUT[i,0]*pA
 
@@ -161,7 +167,7 @@ spikes = SpikeMonitor(P)
 mon = StateMonitor(Ce, 'w', record=[0, 1, 4])
 visualise_connectivity(Ce)
 
-run(1 * second, report='text')
+run(2 * second, report='text')
 
 
 
