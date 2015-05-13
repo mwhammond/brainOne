@@ -9,21 +9,29 @@ VT = -50.4 * mV
 DeltaT = 2 * mV
 Vcut = VT + 5 * DeltaT
 
-gmax = 2
+EPSPmax = 1
+IPSPmax = 1
+
 taupre = 20*ms
 taupost = taupre
+
 dApre = .01
 dApost = -dApre * taupre / taupost * 1.05
-dApost *= gmax
-dApre *= gmax
+dApost *= EPSPmax
+dApre *= EPSPmax
 
-propInhib = 0.2 # proportion of inhbitory cells
+
+
+
+propInhib = 0.5 # proportion of inhbitory cells
 NE = 20          # Number of excitatory cells
 NI = int(math.ceil(NE*propInhib))         # Number of inhibitory cells
 print NE
 print "excitatory neurons"
 print NI
 print "inhibitory neurons"
+
+taum, taue, taui = 10*ms, 2*ms, 25*ms
 
 # Pick an electrophysiological behaviour
 tauw, a, b, Vr = 144*ms, 4*nS, 0.0805*nA, -70.6*mV # Regular spiking (as in the paper)
@@ -41,31 +49,13 @@ neuron2 = NeuronGroup(NE, model=eqs, threshold='vm>Vcut',
                      reset="vm=Vr; w+=b")
 
 
-#neuron2.vm =  'rand() * EL'
-
-
-
+neuron2.I = 'rand()*nA' # THIS BIT!!! # PRINT OUT VALUES
 Pe = neuron2[:NE] # set all to excitatory
 Pi = neuron2[NE-NI:] # everything after is inhibitory
 
-traceE = StateMonitor(Pe, 'vm', record=[0,5,10])
-spikesE = SpikeMonitor(Pe)
-
-traceI = StateMonitor(Pi, 'vm', record=[0,1])
-spikesI = SpikeMonitor(Pi)
-
-# THEN ADD WEIGHT TRACE FOR INHIB
 
 
-#run(20 * ms)
 
-#run(100 * ms)
-#neuron1.I = 0*nA
-#run(20 * ms)
-
-#S = Synapses(neuron1, neuron2, model='we : volt', pre='vm += we')
-#S.connect([0,1],0)
-#S.we = 2 *mV
 
 Se = Synapses(Pe, neuron2,
               '''we : 1
@@ -73,12 +63,15 @@ Se = Synapses(Pe, neuron2,
                 dApost/dt = -Apost / taupost : 1 (event-driven)''',
              pre='''vm += we * mV
                     Apre += dApre
-                    we = clip(we + Apost, 0, gmax)''',
+                    we = clip(we + Apost, 0, EPSPmax)''',
              post='''Apost += dApost
-                     we = clip(we + Apre, 0, gmax)''')
+                     we = clip(we + Apre, 0, EPSPmax)''')
 
-Se.connect('i!=j', p=0.8)
-Se.we = 'rand() * gmax'
+Se.connect(True, p=0.7)
+Se.we = 'rand()'
+
+
+
 
 
 Si = Synapses(Pi, neuron2,
@@ -87,31 +80,37 @@ Si = Synapses(Pi, neuron2,
                 dApost/dt = -Apost / taupost : 1 (event-driven)''',
              pre='''vm -= wi * mV
                     Apre += dApre
-                    wi = clip(wi + Apost, 0, gmax)''',
+                    wi = clip(wi + Apost, 0, IPSPmax)''',
              post='''Apost += dApost
-                     wi = clip(wi + Apre, 0, gmax)''')
+                     wi = clip(wi + Apre, 0, IPSPmax)''')
 
-Si.connect('i!=j', p=0.2)
-Si.wi = 'rand() * gmax'
-
-
+Si.connect(True, p=0.7)
+Si.wi = 'rand()'
 
 
 
 
 
+################# MONITORING ######################
 
+traceE = StateMonitor(Pe, 'vm', record=[0,5,10])
+spikesE = SpikeMonitor(Pe)
 
+traceI = StateMonitor(Pi, 'vm', record=[0,1])
+spikesI = SpikeMonitor(Pi)
 
+monE = StateMonitor(Se, 'we', record=[0, 1])
+monI = StateMonitor(Si, 'wi', record=[0, 1])
 
-mon = StateMonitor(Se, 'we', record=[0, 1])
 spikesE = SpikeMonitor(Pe)
 spikesI = SpikeMonitor(Pi)
 
+####################################################
 
-#@network_operation(dt=100*ms)
-#def update_active():
-#    print("inject")
+
+@network_operation(dt=100*ms)
+def update_active():
+    print("inject")
     #print defaultclock.t
     #global INPUT
     #global OUTPUT
@@ -119,25 +118,17 @@ spikesI = SpikeMonitor(Pi)
     #print "Printing INPUT from braincore: {}".format(INPUT)
     #print "Printing INPUT from braincore: {}".format(INPUT[0,0])
     #Pe.I = 1*nA
- #   for i in range (0,4):
-  #      Pe.I_[i] = 1*nA
+    #for i in range (0,4):
+    Pe.vm[5] += 30 * mV # EITHER USE V OR DEGRADE CURRENT OVER TIME!
+    # NEXT GET THIS TO WORK FOR MULTIPLE INPUTS AND TURN ON AND OFF
         
         
-# NEXT STEPS #############################
-#SET A STATIC CURRENT TO SEPERATE SPIKING TYPE FROM CURRENT TIME
-#COMBINE SPIKES OF EXCITATORY AND INHIB ON SAME RASTER
-#ADD GRAPH OF INHIB WEIGHTS
-#FIX BLOODY AXIS
-        
-        
-        
-#neuron2.I = 1*nA  
-neuron2.I = 'rand() *nA'
-run(500 *ms)        
+
+run(1000 *ms)        
 
 
-### TRACES #####
-# We draw nicer spikes
+### TRACES ######################################
+
     
 vmE = traceE[0].vm[:]
 for t in spikesE.t:
@@ -154,28 +145,37 @@ for t in spikesI.t:
 
 figure()  
 
-subplot(311) 
+subplot(211) 
 iE, tE = spikesE.it
 plot(tE/ms, iE, 'k.') #ms=0.25
 # overlay inhib 
 iI, tI = spikesI.it
 plot(tI/ms, iI, 'r.') #ms=0.25
 
-subplot(312)    
+subplot(212)    
 plot(traceE.t / ms, vmE / mV,'k')
 # overlay inhib  
 plot(traceI.t / ms, vmI / mV,'r')
 xlabel('time (ms)')
 ylabel('membrane potential (mV)')
 
-subplot(313) 
-plot(mon.t/second, mon.we.T/gmax)
+
+figure()
+
+subplot(211) 
+plot(monE.t/second, monE.we.T/EPSPmax,'k')
+plot(monI.t/second, monI.wi.T/IPSPmax,'r')
 xlabel('Time (s)')
 ylabel('Weight / gmax')
+
+
+
+subplot(212)
+hist(Se.we / EPSPmax, 20)
+hist(Si.wi / IPSPmax, 20)
+xlabel('Weight / gmax')
+
 tight_layout()
-
-
-
 
 
 
@@ -199,6 +199,6 @@ def visualise_connectivity(S):
     xlabel('Source neuron index')
     ylabel('Target neuron index')
 
-visualise_connectivity(Se)
+#visualise_connectivity(Se)
 
 show()
