@@ -2,6 +2,11 @@
 from brian2 import *
 import time
 
+RATEIN = 1
+iE = []
+tE = []
+
+
 # Parameters
 C = 281 * pF
 gL = 30 * nS
@@ -41,8 +46,8 @@ print "inhibitory neurons"
 taum, taue, taui = 10*ms, 2*ms, 25*ms
 
 # Pick an electrophysiological behaviour
-tauw, a, b, Vr = 144*ms, 4*nS, 0.0805*nA, -70.6*mV # Regular spiking (as in the paper)
-#tauw,a,b,Vr=20*ms,4*nS,0.5*nA,VT+5*mV # Bursting
+#tauw, a, b, Vr = 144*ms, 4*nS, 0.0805*nA, -70.6*mV # Regular spiking (as in the paper)
+tauw,a,b,Vr=20*ms,4*nS,0.5*nA,VT+5*mV # Bursting
 #tauw,a,b,Vr=144*ms,2*C/(144*ms),0*nA,-70.6*mV # Fast spiking
 
 eqs = """
@@ -72,27 +77,47 @@ traceE = StateMonitor(Pe, 'vm', record=[15])
 spikesE = SpikeMonitor(Pe)
 
 
-@network_operation(dt=1000*ms)
+# ACCESS THE VALUES BEING RECORDED AND STIM
+@network_operation(dt=100*ms)
 def update_active():
-    Pe.rates = '1*Hz + i*Hz'
-    print "switch"
+    global RATEIN
+    global iE, tE
+    Pe.rates = 'RATEIN*Hz'
+    #Pe.rates = 'RATEIN*Hz + i*Hz'
+    print RATEIN
+    # THE AIM WAS TOC CHANGE THE RATE ON THE 
+    iE, tE = spikesE.it
 
+    #print iE
 
-run(10000 *ms)  
     
-figure()  
-
-subplot(211) 
-iE, tE = spikesE.it
-plot(tE/ms, iE, 'k.') #ms=0.25
 
 
-subplot(212)    
-plot(traceE.t / ms, traceE[15].vm / mV,'k')
-xlabel('time (ms)')
-ylabel('membrane potential (mV)')
 
 
-tight_layout()
+    
+def runit():    
+    run(1000 *ms)  
+    
 
-show()
+    
+#if __name__ == '__main__':
+ #   runit()
+    
+#    figure()  
+
+#    subplot(211) 
+#    iE, tE = spikesE.it
+#    plot(tE/ms, iE, 'k.') #ms=0.25
+
+#    subplot(212)    
+#    plot(traceE.t / ms, traceE[15].vm / mV,'k')
+#    xlabel('time (ms)')
+#    ylabel('membrane potential (mV)')
+#    tight_layout()
+#    show()  
+
+
+
+    
+    
